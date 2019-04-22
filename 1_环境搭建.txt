@@ -1,0 +1,103 @@
+一：环境搭建
+
+1.1 POM依赖
+
+    <!--  mybatis 依赖  -->
+    <dependency>
+        <groupId>org.mybatis</groupId>
+        <artifactId>mybatis</artifactId>
+        <version>3.4.2</version>
+    </dependency>
+    <!-- MySQL 依赖 -->
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <version>5.1.15</version>
+    </dependency>
+
+1.2 添加MyBatis配置文件 项目/src/main/sources/Configuration.xml
+    【注意：配置节点有严格的先后顺序要求】
+
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE configuration  
+	PUBLIC "-//mybatis.org//DTD Config 3.0//EN"  
+	"http://mybatis.org/dtd/mybatis-3-config.dtd">  
+
+<configuration>
+    <!--   模型对象   -->
+    <typeAliases> 
+        <typeAlias alias="User" type="com.bwf.user.entity.User"/> 
+    </typeAliases> 
+	
+    <!--   数据库连接信息   -->
+    <environments default="development">
+        <environment id="development">
+        <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+            <property name="driver" value="com.mysql.jdbc.Driver"/>
+            <property name="url" value="jdbc:mysql://127.0.0.1:3306/bwf_oa?useUnicode=true&amp;characterEncoding=utf-8" />
+            <property name="username" value="root"/>
+            <property name="password" value=""/>
+            </dataSource>
+        </environment>
+    </environments>
+    
+    <!--   ORM   -->
+    <mappers>
+        <mapper resource="com/bwf/user/mapper/User.xml"/>
+    </mappers>
+    
+</configuration>
+
+
+
+
+
+1.3 加载配置文件，创建Session工厂，获取Session。封装类：MyBatisUtils
+
+	private static SqlSessionFactory sqlSessionFactory;
+	private static Reader reader;
+	
+	static{
+		try{
+			reader = Resources.getResourceAsReader("Configuration.xml");
+			sqlSessionFactory = new SqlSessionFactoryBuilder().build(reader);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	public static SqlSession getSession(){
+		return sqlSessionFactory.openSession();
+	}
+
+
+
+
+
+
+
+1.4 添加模型对象Model
+
+	分层优先：依赖程度高
+
+	模块优先：依赖程度低
+
+
+
+
+
+1.5 添加ORM映射文件 Model.xml
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.bwf.user.dao.UserDao">
+    
+    <!--   根据Id查询一个模型对象   -->
+    <select id="getUserById" parameterType="int" resultType="User">
+        select * from `user` where userId = #{id}
+    </select>
+
+</mapper>

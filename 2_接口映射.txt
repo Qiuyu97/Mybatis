@@ -1,0 +1,92 @@
+一：接口映射
+
+1.1 配置映射文件 Model.xml
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.bwf.user.dao.UserDao">
+    
+    <!--   根据Id查询一个模型对象   -->	
+    <select id="getUserById" parameterType="int" resultType="User">
+        select * from `user` where userId = #{id}
+    </select>
+    
+    <!--   查询模型对象集合   -->
+    <select id="getUserList" resultMap="userList">
+    	select * from `user` 
+    		where nickName like "%"#{nickname}"%"
+    </select>
+    
+    
+    <!--   配置模型对象集合的返回类型   -->
+    <resultMap type="User" id="userList">
+    	<id column="userId" property="userId"/>
+    	<result column="uname" property="uname"/>
+    	<result column="upwd" property="upwd"/>
+    	<result column="nickName" property="nickName"/>
+    </resultMap>
+</mapper>
+
+
+
+
+
+1.2 添加接口 ModelDao
+
+public interface UserDao {	
+	User getUserById(int id);
+	List<User> getUserList(@Param("nickname") String nickname);
+}
+
+
+
+
+
+1.3 获取接口对象 
+
+UserDao userDao = session.getMapper(UserDao.class);
+
+
+
+【如果只有一个参数，可以指定参数类型，就不用定义@param()注解】
+<select id="getUserById" parameterType="int" resultType="User">
+        select * from `user` where userId = #{id}
+</select>
+
+
+【如果有多个参数，那么就没有办法定义参数类型，就不用写】
+【有多个参数的，就必须在接口方法中的，参数添加映射@Param()注解】
+
+
+
+
+二：模型对象CRUD操作
+【必须提交事物，否则无效】
+
+2.1 添加模型对象
+
+    <!--   添加模型对象   -->
+    <insert id="addUser" parameterType="User" keyProperty="user.userId" useGeneratedKeys="true">
+    	insert into user (uname,upwd,nickName) values (#{user.uname},#{user.upwd},#{user.nickName})
+    </insert>
+
+
+2.2 修改模型对象
+
+    <!--   修改模型对象   -->
+    <update id="updateUser" parameterType="User" >
+    	update user set uname = #{user.uname},upwd=#{user.upwd},nickName=#{user.nickName} 
+    		where userId = #{user.userId}
+    </update>
+
+2.3 删除模型对象
+
+    <!--   删除模型对象   -->
+    <delete id="deleteUser" parameterType="Integer">
+    	delete from user where userId = #{userId}
+    </delete>
+
+
+

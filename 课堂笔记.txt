@@ -1,0 +1,277 @@
+【MyBatis框架】
+	它是一个轻量级的底层数据持久层的框架。
+	它原名：ibatis，主要提供的是：ORM 对象数据模型映射
+	提供的具体操作为针对数据库的DQL，DML，事务tran机制。
+	
+学习中，只使用mybatis的内容，
+为了保证能够正常测试，提供简单的view和工厂。
+框架合并后，使用注解就可以实现。
+
+利用Maven搭建一个最简单的项目骨架。
+修改settings配置文件
+删除默认提供的测试文件及包
+
+====================================================
+pom.xml中添加配置信息
+
+===========基于运行环境依赖的===================
+    <!--  mybatis 依赖  -->
+    <dependency>
+        <groupId>org.mybatis</groupId>
+        <artifactId>mybatis</artifactId>
+        <version>3.4.2</version>
+    </dependency>
+    <!-- MySQL 依赖 -->
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <version>5.1.15</version>
+    </dependency>
+
+
+
+===========基于项目框架依赖的===================
+<build>
+    <finalName>******项目名称******</finalName>
+    <plugins>
+    		<!-- 打包时跳过单元测试 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.19.1</version>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+            </plugin>
+            
+            <!--  定义项目比对JDK版本  -->  
+        	<plugin>  
+	            <groupId>org.apache.maven.plugins</groupId>  
+	            <artifactId>maven-compiler-plugin</artifactId>  
+	            <version>3.5.1</version>  
+	            <configuration>  
+	                <source>1.8</source> 
+	                <target>1.8</target> 
+	            </configuration>  
+	        </plugin>
+	        
+	        <!-- 集成Tomcat插件 -->
+            <plugin>
+                <groupId>org.apache.tomcat.maven</groupId>
+                <artifactId>tomcat7-maven-plugin</artifactId>
+                <version>2.2</version>
+                <configuration>
+                    <path>/${project.artifactId}</path>
+                </configuration>
+            </plugin>
+            
+    </plugins>
+  </build>
+
+==================================================
+采用模块式开发，搭建的格式是模块形式的。
+com.bwf.模块.service
+com.bwf.模块.dao
+com.bwf.模块.bean/entity
+
+=================================================
+为了可以测试，目前手动添加配置文件与utils工厂
+
+创建资源文件夹： src/main/sources
+在src/main/sources/创建：Configuration.xml
+
+	xml文档名称可以自定义。
+
+【注意】：
+	【第一：里面每一个标签都有严格的先后顺序】
+		a、实体模型
+		b、数据库连接
+		c、orm映射
+
+	【第二：目前为止，只能先保留 数据库连接】
+	【适当修改里面的连接字符串】
+---------------------------------------------------
+Configuration.xml
+
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE configuration  
+	PUBLIC "-//mybatis.org//DTD Config 3.0//EN"  
+	"http://mybatis.org/dtd/mybatis-3-config.dtd">  
+
+<configuration>
+    <!--   模型对象   
+    <typeAliases> 
+        <typeAlias alias="User" type="com.bwf.user.entity.User"/> 
+    </typeAliases> 
+	-->
+	
+    <!-- 数据库连接信息 -->
+    <environments default="development">
+        <environment id="development">
+        <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+            <property name="driver" value="com.mysql.jdbc.Driver"/>
+            <property name="url" value="jdbc:mysql://localhost:3306/users?useUnicode=true&amp;characterEncoding=utf-8" />
+            <property name="username" value="root"/>
+            <property name="password" value="1234"/>
+            </dataSource>
+        </environment>
+    </environments>
+
+    <!--   ORM   
+    <mappers>
+        <mapper resource="com/bwf/user/mapper/User.xml"/>
+    </mappers>
+    -->
+</configuration>
+
+
+==============================================================
+
+项目开发，完全依赖java包：
+在src/main/java中，创建如下内容（数据库静态工厂，得到连接操作对象）
+包名： com.bwf.utils
+只是为了目前学习使用一下
+
+【MyBatisFactory.java】
+
+//利用MyBatis创建一个获取数据库连接的工厂对象
+public class MyBatisFactory {
+
+	//MyBatis创建返回的是一个完整的数据库会话工厂
+	private static SqlSessionFactory sqlSessionFactory;
+	//IO的读取对象，用于读取配置文件
+	private static Reader reader;
+	
+	//静态块：第一次被使用的时候，就会执行了
+	static{
+		try{
+			//读取配置的xml文档，得到io流
+			reader = Resources.getResourceAsReader("Configuration.xml");
+			//通过数据库会话工厂构建方法，构建这个io流获取到的内容，得到数据库会话工厂
+			sqlSessionFactory = new SqlSessionFactoryBuilder().build(reader);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	//单独配置的方法，
+	public static SqlSession getSession(){
+		//openSession：打开会话
+		//返回数据库会话工厂开启会话后的一个连接Connection对象
+		return sqlSessionFactory.openSession();
+	}	
+}
+==========================================================
+
+采用模块式搭建，com.bwf.模块.层
+实体对象层，在之前：bean
+但是在MyBitas中，它使用的是entity
+
+名字无所谓，可以自定义，但是必须和配置文件 Configuration.xml
+中对应好。
+
+==========================================================
+
+数据库只要有一张表，必须提供一个具体的实体对象entity，
+
+表中每一个列，就是每一个属性，一个都不能缺省。
+
+如果有一个实体对象，那么就必须提供一个对应的映射文件，
+
+mapper/名字.xml
+
+----------------------------------------------------------
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.bwf.user.dao.UserDao">
+    
+    <!--   根据Id查询一个模型对象   -->	
+    <select id="getUserById" parameterType="int" resultType="User">
+        select * from `user` where userId = #{id}
+    </select>
+    
+    <!--   查询模型对象集合   -->
+    <select id="getUserList" resultMap="userList">
+    	select * from `user` 
+    		where nickName like "%"#{nickname}"%"
+    </select>
+    
+    
+    <!--   配置模型对象集合的返回类型   -->
+    <resultMap type="User" id="userList">
+    	<id column="userId" property="userId"/>
+    	<result column="uname" property="uname"/>
+    	<result column="upwd" property="upwd"/>
+    	<result column="nickName" property="nickName"/>
+    </resultMap>
+</mapper>
+
+
+========================================================
+目前：
+	没有Spring辅助，只能
+	//获取数据库会话工厂对象
+	SqlSession session = MyBatisFactory.getSession();		
+	//创建Dao层对象
+	UserDao userDao = session.getMapper(UserDao.class);
+
+只有，搭建整体框架，
+使用@注解就可以实现了。
+
+
+
+使用的 接口对象声明方法， mapper中利用xml文档实现方法的重写。
+中间的操作就是ORM映射关系
+
+
+MyBatis中，提供了强大的CURD操作。
+
+C： Create： 执行insert
+
+U：Update：执行update
+
+R：Reader：执行select
+
+D：Delete：执行delete
+
+
+=================================================
+
+//必须有的参数不能少
+// 接口中，方法定义了参数的注解 @Param("名字")
+//	那么，所有xml标签中，parameterType不用写
+
+
+<select   id="" resultType=""/resultMap=""></select>
+<insert   id="" keyProperty="" useGeneratedKeys="true"></insert>
+<update id="" ></update>
+<delete  id="" ></delete>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

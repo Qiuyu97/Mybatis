@@ -1,0 +1,91 @@
+
+【复合查询】
+	实际开发中，数据库表中的数据，应该是参照完整性的。
+	实际上对应的是一个具体的列的值，PK---FK，通常都是数值类型的
+
+	在创建实体的时候，是创建一个值类型的属性还是对象类型的属性？
+
+	大型项目中，基础的实体模型中【禁止创建对象类型】，如果要对象，
+	它是属于业务需求，而不是表中就有的，因此，应该提供vo对象。
+
+	中小型项目，为了提高开发效率，允许在基础的实体模型中，创建
+	特殊元素：类对象，集合对象等等，实现：一对多，多对一关系
+
+
+
+================================================================================
+一：Many-To-One
+	当一个模型中，还存在另一个模型的对象，
+	如：用户表中的属性里有一个性别对象 或 角色表中有一个部门对象
+	我们在当前模型中，就需要为其创建两个<resultMap>
+	一个没有这个类对象，（可提供：下拉列表，选择项使用）
+	一个有这个类对象，  （可提供获取数据使用）
+
+	对象在映射关系中，使用<association>进行定义。
+
+	查询语句需要使用 外链接，主表为当前模型，从表为内部对象模型。
+	程序会自动分析，进行数据模型的填充
+    
+    
+    <resultMap type="Role" id="role">
+    	<id property="roleId" column="roleId"/>
+    	<result property="roleName" column="roleName"/>
+    </resultMap>
+    
+    <resultMap type="Role" id="roleWithDepartment">
+    	<id property="roleId" column="roleId"/>
+    	<result property="roleName" column="roleName"/>
+    	<association property="department"  javaType="Department" 
+    		resultMap="com.bwf.user.dao.DepartmentDao.department"></association>	
+    </resultMap>
+
+    <select id="getAllRoleListWithDepartment" resultMap="roleWithDepartment">
+    	select role.*,department.*
+    	from role 
+    	left join department on role.departmentId = department.departmentId
+    </select>
+
+
+	当然，我们会发现之前在另一个模型中已经写过这个对象了，那么我们可以直接饮用那边的resultMap
+	resultMap="com.bwf.user.dao.DepartmentDao.department"
+	【注意：必须带有包名】
+
+
+
+========================================================================================
+二：One-To-Many
+
+    <select id="getAllDepartmentListWithRoles" resultMap="departmentWithRole">
+    	select department.*,role.*
+    	from department left join role on department.departmentId = role.departmentId
+    </select>
+
+    <resultMap type="Department" id="departmentListWithRoles">
+    	<id property="departmentId" column="departmentId"/>
+    	<result property="departmentName" column="departmentName"/>
+    	<collection property="roles" javaType="Role" resultMap="com.bwf.role.dao.RoleDao.roleList"></collection>
+    </resultMap>
+
+
+
+三：Many-To-Many
+
+    实际本质最终还是：双向 One-To-Many 实现
+	查询语句只需要多一个left join 追加一个表格就可以，程序会自动填充
+
+
+
+
+
+
+四：自连接查询
+
+    <resultMap type="Permission" id="permission">
+    	<id property="permissionId" column="permissionId"/>
+    	<result property="permissionName" column="permissionName"/>
+    	<association property="parent" javaType="Permission" column="pid" 
+    		select="getPermissionById" ></association>
+    	<collection property="children" ofType="Permission" column="permissionId" select="getPermissionListByParentId" ></collection>
+    </resultMap>
+
+    

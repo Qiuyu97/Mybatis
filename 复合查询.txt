@@ -1,0 +1,163 @@
+
+【不同的表：role 和 department】
+
+	身份role表中，有一个department部门的对象，查询的时候：
+
+	身份表中定义 Department 对象属性，
+
+	Role.xml中，
+	<resultMap type="Role" id="roleListWithDepartment">
+    		<id column="roleId" property="roleId"/>
+    		<result column="roleName" property="roleName"/>
+    		<association property="department" javaType="Department">
+    			<id column="departmentId" property="departmentId"/>
+    			<result column="departmentName" property="departmentName"/>
+    			<result column="pid" property="pid"/>
+    			<result column="userId" property="userId"/>
+    		</association>
+    	</resultMap>
+	利用association表示类中的对象，
+	property：对应类中的属性名称
+	javaType：实例化的具体类对象，要new
+	创建需要的列
+	
+	<select id="getRoleWithDepartment" resultMap="roleListWithDepartment">
+		select 
+		role.*,department.*
+		from `role`
+		left join `department` on role.departmentId=department.departmentId;
+	</select>
+	利用外链接的方式，提供主表和从表
+	主表为当前Role，填充属性
+	从表为Department，自动实例化，然后赋值，再将对象赋予当前类中的属性
+
+
+================================================================
+如果其他模型中，已经存在 resultMap，且格式与当前需要的一样，
+可以直接调用而不用再写一遍了：
+
+追加属性
+resultMap="命名空间namespace.resultMap的id"
+
+
+
+Department.xml
+<mapper namespace="com.bwf.user.dao.DepartmentDao">
+   <resultMap type="Department" id="departmentList">
+
+
+
+<association property="department" javaType="Department"
+	resultMap="com.bwf.user.dao.DepartmentDao.departmentList"></association>
+
+
+==============================================================================
+
+【不同的表 department 和 role】
+
+	department部门表中，有一个role角色的集合对象：
+
+	和上面的一样，同样的操作，只是，对象换成了集合：
+
+    <resultMap type="Department" id="departmentWithRole">
+    	<id column="departmentId" property="departmentId"/>
+    	<result column="departmentName" property="departmentName"/>
+    	<result column="pid" property="pid"/>
+    	<result column="userId" property="userId"/>
+    	<collection property="roles" javaType="Role" resultMap="com.bwf.user.dao.RoleDao.roleList"></collection>
+    </resultMap>
+    <select id="getDepartmentWithRole" resultMap="departmentWithRole">
+    	select department.*,role.*
+    	from `department` left join `role` on role.departmentId=department.departmentId;    
+    </select>
+
+
+===============================================================================
+有一张参照表的，三张表联查，只需要两张表的数据
+依然和上面一样，
+left join查询的时候，只提取需要的表的列，多余的不要提取。
+
+
+<resultMap type="User" id="userWithRole">
+		<id column="userId" property="userId"/>
+    	<result column="uname" property="uname"/>
+    	<result column="upwd" property="upwd"/>
+    	<result column="nickName" property="nickName"/>
+    	<result column="face" property="face"/>
+    	<collection property="roles" javaType="Role" resultMap="com.bwf.user.dao.RoleDao.roleList"></collection>
+</resultMap>
+<select id="getUserWithRole" resultMap="userWithRole">
+		select 
+		`user`.*,role.*   //多余的不要
+		from `user`
+		left join `user_role` on user_role.userId=`user`.userId
+		left join `role` on role.roleId=user_role.roleId
+</select>
+
+
+
+===============================================================================
+
+	在MyBatis中，是由它去构建一个 接口的实现类，这个实现类是匿名的。
+
+	因此，导致，程序员没有办法直接干预实现类中的实现方法。
+
+
+	有一个需求：
+
+		执行一个查询操作，查询用户，但是有很多条件，还需要分页。
+		用户id，用户名，昵称，领导id等，这些可能有，可能没有。
+
+		有，就添加where条件，没有就不要？
+
+
+		如果是手写：<select>，就是需要逐个定义，至少10以上了.
+
+
+	MyBatis提供了一个强大的，xml中的，动态查询操作
+
+	允许我们利用标签的形式，定义语句的操作。
+
+
+
+<where></where>  没有参数的，实现语句   where 1=1 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

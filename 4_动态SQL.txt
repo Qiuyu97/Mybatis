@@ -1,0 +1,66 @@
+一：动态SQL
+1、if，switch
+<select id="getDetailList" resultMap="detailPo">
+		select *
+			from detail
+			<where>
+				<if test="orderSn != null">
+					and orderSn like "%"#{orderSn}"%"
+				</if>
+				<if test="prodName != null">
+					and prodName like "%"#{prodName}"%"
+				</if>
+				<if test="typeId != null">
+					and prodTypeId = #{typeId}
+				</if>
+				<if test="supplierId != null">
+					and supplierId = #{supplierId}
+				</if>
+				<if test="orderUserId != null">
+					and orderUserId = #{orderUserId}
+				</if>
+			</where>
+			<choose>
+				<when test="start!=null and length!=null">
+					limit #{start},#{length}
+				</when>
+				<when test="start==null and length!=null">
+					limit 0,#{length}
+				</when>
+				<when test="start!=null and length==null">
+					limit #{start},10
+				</when>
+				<otherwise>
+					limit 0,10
+				</otherwise>
+			</choose>
+	</select>
+
+3. trim                                     包含内容增加前缀后缀
+
+4. where                                  处理sql中的where条件
+
+    <where>
+    </where>
+
+5. set                                       主要用于更新
+
+        <set>
+            <if test="title != null">
+                title = #{title},
+            </if>
+            <if test="content != null">
+                content = #{content},
+            </if>
+            <if test="owner != null">
+                owner = #{owner}
+            </if>
+        </set>
+
+6. foreach                               主要实现in条件
+
+    <foreach collection="ids" index="ind" item="it" open="(" separator="," close=")">
+    #{it}
+    </foreach>
+
+
